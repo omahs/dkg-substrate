@@ -525,10 +525,7 @@ where
 		try_resume_dkg(self, header);
 
 		if let Some((active, queued)) = self.validator_set(header) {
-			// Authority set change or genesis set id triggers new voting rounds
-			//
-			// TODO: Enacting a new authority set will also implicitly 'conclude'
-			//		 the currently active DKG voting round by starting a new one.
+			// Authority set change or genesis set id triggers new DKG setups
 			if active.id != self.current_validator_set.id ||
 				(active.id == GENESIS_AUTHORITY_SET_ID && self.best_dkg_block.is_none())
 			{
