@@ -27,7 +27,7 @@ pub fn insert_controller_account_keys_into_keystore(
 ) {
 	let chain_type = config.chain_spec.chain_type();
 	let seed = &config.network.node_name[..];
-
+	println!("seed {:?} of chain type {:?}", seed, chain_type);
 	match seed {
 		// When running the chain in dev or local test net, we insert the sr25519 account keys for
 		// collator accounts or validator accounts into the keystore Only if the node running is one
@@ -35,7 +35,9 @@ pub fn insert_controller_account_keys_into_keystore(
 		"Alice" | "Bob" | "Charlie" | "Dave" | "Eve" | "Ferdie" => {
 			if chain_type == ChainType::Development || chain_type == ChainType::Local {
 				let pub_key = get_from_seed::<sr25519::Public>(&seed).encode();
+				println!("pub key {:?}", pub_key);
 				if let Some(keystore) = key_store {
+					//println!("key store {:?}", keystore);
 					let _ = SyncCryptoStore::insert_unknown(
 						&*keystore,
 						ACCOUNT,

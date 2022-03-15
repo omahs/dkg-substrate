@@ -110,9 +110,10 @@ const __NODE_STATE: {
 	alice: { isRunning: false, process: null },
 	bob: { isRunning: false, process: null },
 	charlie: { isRunning: false, process: null },
+	dave: { isRunning: false, process: null },
 };
 export function startStandaloneNode(
-	authority: 'alice' | 'bob' | 'charlie',
+	authority: 'alice' | 'bob' | 'charlie' | 'dave',
 	options: { tmp: boolean; printLogs: boolean } = { tmp: true, printLogs: false }
 ): child.ChildProcess {
 	if (__NODE_STATE[authority].isRunning) {
@@ -124,6 +125,7 @@ export function startStandaloneNode(
 		alice: { ws: 9944, http: 9933, p2p: 30333 },
 		bob: { ws: 9945, http: 9934, p2p: 30334 },
 		charlie: { ws: 9946, http: 9935, p2p: 30335 },
+		dave: {ws:9947, http: 9936, p2p: 30336},
 	};
 	const proc = child.spawn(
 		nodePath,
@@ -162,6 +164,7 @@ export function startStandaloneNode(
 	__NODE_STATE[authority].process = proc;
 
 	proc.stdout.on('data', (data) => {
+		console.log(`data ${data} for node is ${authority}`);
 		process.stdout.write(data);
 	});
 
@@ -562,7 +565,7 @@ export interface RescueTokensProposal {
 	**/
 	readonly header: ProposalHeader;
 
-	/** 
+	/**
 	 * 20 bytes Hex-encoded string.
 	 */
 	readonly tokenAddress: string;
@@ -611,7 +614,7 @@ export interface ResourceIdUpdateProposal {
 	* See `encodeProposalHeader` for more details.
 	*/
 	readonly header: ProposalHeader;
-	/** 
+	/**
 	 * 32 bytes Hex-encoded string.
 	 */
 	readonly newResourceId: string;
