@@ -264,7 +264,9 @@ pub mod pallet {
 		}
 
 		fn on_initialize(n: BlockNumberFor<T>) -> frame_support::weights::Weight {
+			// Every block we consider refreshing if there is no refresh in progress
 			if Self::should_refresh(n) && !Self::refresh_in_progress() {
+				// If we should refresh, we must have the next public key available.
 				if let Some(pub_key) = Self::next_dkg_public_key() {
 					RefreshInProgress::<T>::put(true);
 					let uncompressed_pub_key =
@@ -276,7 +278,6 @@ pub mod pallet {
 					};
 					match T::ProposalHandler::handle_unsigned_refresh_proposal(data) {
 						Ok(()) => {
-							RefreshNonce::<T>::put(next_nonce);
 							frame_support::log::debug!("Handled refresh proposal");
 						},
 						Err(e) => {
@@ -800,23 +801,10 @@ pub mod pallet {
 				})?;
 			// Remove unsigned refresh proposal from queue
 			T::ProposalHandler::handle_signed_refresh_proposal(data)?;
+			let next_nonce = Self::refresh_nonce() + 1u32;
+			RefreshNonce::<T>::put(next_nonce);
 			NextPublicKeySignature::<T>::put(signature.clone());
 			Self::deposit_event(Event::NextPublicKeySignatureSubmitted { pub_key_sig: signature });
-			// Handle manual refresh if flag is set
-			if Self::should_manual_refresh() {
-				ShouldManualRefresh::<T>::put(false);
-				let next_authorities = NextAuthorities::<T>::get();
-				let next_authority_accounts = NextAuthoritiesAccounts::<T>::get();
-				// Force rotate the next authorities into the active and next set.
-				Self::change_authorities(
-					next_authorities.clone(),
-					next_authorities,
-					next_authority_accounts.clone(),
-					next_authority_accounts,
-					true,
-				);
-			}
-
 			Ok(().into())
 		}
 
@@ -1015,45 +1003,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// Manual Trigger DKG Refresh process.
-		///
-		/// Can only be called by the root origin.
-		///
-		/// * `origin` - The account that is initiating the refresh process.
-		/// **Important**: This function is only available for testing purposes.
-		#[pallet::weight(<T as Config>::WeightInfo::manual_refresh())]
-		#[transactional]
-		pub fn manual_refresh(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
-			if Self::refresh_in_progress() {
-				return Err(Error::<T>::RefreshInProgress.into())
-			}
-			if let Some(pub_key) = Self::next_dkg_public_key() {
-				RefreshInProgress::<T>::put(true);
-				let uncompressed_pub_key = Self::decompress_public_key(pub_key.1).unwrap();
-				let next_nonce = Self::refresh_nonce() + 1u32;
-				let data = dkg_runtime_primitives::RefreshProposal {
-					nonce: next_nonce.into(),
-					pub_key: uncompressed_pub_key,
-				};
-
-				match T::ProposalHandler::handle_unsigned_refresh_proposal(data) {
-					Ok(()) => {
-						RefreshNonce::<T>::put(next_nonce);
-						ShouldManualRefresh::<T>::put(true);
-						frame_support::log::debug!("Handled refresh proposal");
-						Ok(().into())
-					},
-					Err(e) => {
-						frame_support::log::warn!("Failed to handle refresh proposal: {:?}", e);
-						Err(Error::<T>::ManualRefreshFailed.into())
-					},
-				}
-			} else {
-				Err(Error::<T>::NoNextPublicKey.into())
-			}
-		}
-
 		/// Forcefully rotate the DKG
 		///
 		/// This forces the next authorities into the current authority spot and
@@ -1248,6 +1197,8 @@ impl<T: Config> Pallet<T> {
 		// Set refresh in progress to false
 		RefreshInProgress::<T>::put(false);
 		// Update the next thresholds for the next session
+		let next_sig_t = Self::next_signature_threshold();
+		let next_key_t = Self::next_keygen_threshold();
 		NextSignatureThreshold::<T>::put(PendingSignatureThreshold::<T>::get());
 		NextKeygenThreshold::<T>::put(PendingKeygenThreshold::<T>::get());
 		// Compute next ID for next authorities
@@ -1258,7 +1209,7 @@ impl<T: Config> Pallet<T> {
 		NextAuthoritiesAccounts::<T>::put(&next_authorities_accounts);
 		NextAuthoritySetId::<T>::put(next_id.saturating_add(1));
 		let next_best_authorities = Self::next_best_authorities();
-		NextBestAuthorities::<T>::put(Self::get_best_authorities(
+		extBestAuthorities::<T>::put(Self::get_best_authorities(
 			Self::next_keygen_threshold() as usize,
 			&next_authority_ids,
 		));
@@ -1266,7 +1217,6 @@ impl<T: Config> Pallet<T> {
 		let next_pub_key = Self::next_dkg_public_key();
 		let next_pub_key_signature = Self::next_public_key_signature();
 		let dkg_pub_key = Self::dkg_public_key();
-		let pub_key_signature = Self::public_key_signature();
 		// Switch on forced for forceful rotations
 		let v = if forced {
 			// If forced we supply an empty signature
@@ -1277,8 +1227,8 @@ impl<T: Config> Pallet<T> {
 		// Rotate the authority set if a next pub key and next signature exist
 		if let Some((next_pub_key, next_pub_key_signature)) = v {
 			// Update the active thresholds for the next session
-			SignatureThreshold::<T>::put(NextSignatureThreshold::<T>::get());
-			KeygenThreshold::<T>::put(NextKeygenThreshold::<T>::get());
+			SignatureThreshold::<T>::put(next_sig_t);
+			KeygenThreshold::<T>::put(next_key_t);
 			// Ensure next/pending thresholds remain valid across authority set changes that may
 			// break. We update the pending thresholds because we call `refresh_keys` below, which
 			// rotates all the thresholds into the current / next sets. Pending becomes the next,
@@ -1311,7 +1261,7 @@ impl<T: Config> Pallet<T> {
 			DKGPublicKeySignature::<T>::put(next_pub_key_signature.clone());
 			PreviousPublicKey::<T>::put(dkg_pub_key);
 			UsedSignatures::<T>::mutate(|val| {
-				val.push(pub_key_signature.clone());
+				val.push(next_pub_key_signature.clone());
 			});
 			// Emit events so other front-end know that.
 			Self::deposit_event(Event::PublicKeyChanged {
