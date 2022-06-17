@@ -78,7 +78,7 @@ use dkg_primitives::{
 use dkg_runtime_primitives::{AuthoritySet, DKGApi};
 
 use crate::async_protocols::{
-	misbehaviour_monitor::MisbehaviourMonitor, remote::AsyncProtocolRemote,
+	remote::AsyncProtocolRemote,
 	AsyncProtocolParameters, GenericAsyncHandler,
 };
 
@@ -137,13 +137,10 @@ where
 	pub current_validator_set: Arc<RwLock<AuthoritySet<Public>>>,
 	/// Queued validator set
 	pub queued_validator_set: AuthoritySet<Public>,
-	/// Msg cache for startup if authorities aren't set
-	pub msg_cache: Vec<SignedDKGMessage<AuthorityId>>,
 	/// Tracking for the broadcasted public keys and signatures
 	pub aggregated_public_keys: Arc<Mutex<HashMap<RoundId, AggregatedPublicKeys>>>,
 	/// Tracking for the misbehaviour reports
 	pub aggregated_misbehaviour_reports: AggregatedMisbehaviourReportStore,
-	pub misbehaviour_tx: Option<UnboundedSender<DKGMisbehaviourMessage>>,
 	/// Tracking for sent gossip messages: using blake2_128 for message hashes
 	/// The value is the number of times the message has been sent.
 	pub has_sent_gossip_msg: HashMap<[u8; 16], u8>,
@@ -196,7 +193,6 @@ where
 
 		DKGWorker {
 			client: client.clone(),
-			misbehaviour_tx: None,
 			backend,
 			key_store,
 			gossip_engine: Arc::new(gossip_engine),
@@ -212,7 +208,6 @@ where
 			current_validator_set: Arc::new(RwLock::new(AuthoritySet::empty())),
 			queued_validator_set: AuthoritySet::empty(),
 			latest_header,
-			msg_cache: Vec::new(),
 			aggregated_public_keys: Arc::new(Mutex::new(HashMap::new())),
 			aggregated_misbehaviour_reports: HashMap::new(),
 			has_sent_gossip_msg: HashMap::new(),
@@ -328,20 +323,12 @@ where
 		) {
 			Ok(async_proto_params) => {
 				let err_handler_tx = self.error_handler_tx.clone();
-				let misbehaviour_tx =
-					self.misbehaviour_tx.clone().expect("Misbehaviour TX not loaded");
-				let remote = async_proto_params.handle.clone();
-				let engine = async_proto_params.engine.clone();
 
 				match GenericAsyncHandler::setup_keygen(async_proto_params, threshold) {
 					Ok(meta_handler) => {
 						let task = async move {
-							let misbehaviour_monitor =
-								MisbehaviourMonitor::new(remote, engine, misbehaviour_tx);
-
 							let res = tokio::select! {
 								res0 = meta_handler => res0,
-								res1 = misbehaviour_monitor => Err(DKGError::CriticalError { reason: format!("Misbehaviour monitor should not finish before meta handler. Reason for exit: {:?}", res1)})
 							};
 
 							match res {
@@ -394,10 +381,6 @@ where
 		) {
 			Ok(async_proto_params) => {
 				let err_handler_tx = self.error_handler_tx.clone();
-				let misbehaviour_tx =
-					self.misbehaviour_tx.clone().expect("Misbehaviour TX not loaded");
-				let remote = async_proto_params.handle.clone();
-				let engine = async_proto_params.engine.clone();
 
 				match GenericAsyncHandler::setup_signing(
 					async_proto_params,
@@ -408,12 +391,8 @@ where
 				) {
 					Ok(meta_handler) => {
 						let task = async move {
-							let misbehaviour_monitor =
-								MisbehaviourMonitor::new(remote, engine, misbehaviour_tx);
-
 							let res = tokio::select! {
 								res0 = meta_handler => res0,
-								res1 = misbehaviour_monitor => Err(DKGError::CriticalError { reason: format!("Misbehaviour monitor should not finish before meta handler. Reason for exit: {:?}", res1)})
 							};
 
 							match res {
@@ -1282,9 +1261,6 @@ where
 
 	pub(crate) async fn run(mut self) {
 		let mut dkg = self.gossip_engine.stream();
-		let (misbehaviour_tx, mut misbehaviour_rx) = tokio::sync::mpsc::unbounded_channel();
-		self.misbehaviour_tx = Some(misbehaviour_tx);
-
 		let mut error_handler_rx = self.error_handler_rx.take().unwrap();
 
 		self.initialization().await;
@@ -1309,17 +1285,6 @@ where
 						break;
 					}
 				},
-
-				misbehaviour_msg = misbehaviour_rx.recv().fuse() => {
-					if let Some(msg) = misbehaviour_msg {
-						log::debug!(target: "dkg", "Going to gossip misbehaviour");
-						gossip_misbehaviour_report(&mut self, msg)
-					} else {
-						log::error!("Misbehaviour channel closed");
-						break;
-					}
-				}
-
 				error = error_handler_rx.recv().fuse() => {
 					if let Some(error) = error {
 						log::debug!(target: "dkg", "Going to handle dkg error");
@@ -1329,9 +1294,7 @@ where
 						break;
 					}
 				},
-
 				dkg_msg = dkg.next().fuse() => {
-					debug!("DKG message received {:?}", dkg_msg);
 					if let Some(dkg_msg) = dkg_msg {
 						log::debug!(target: "dkg", "Going to handle dkg message");
 						self.process_incoming_dkg_message(dkg_msg);

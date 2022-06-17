@@ -475,7 +475,6 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub authorities: Vec<T::DKGId>,
-		pub threshold: u32,
 		pub authority_ids: Vec<T::AccountId>,
 	}
 
@@ -539,7 +538,7 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { authorities: Vec::new(), threshold: 0, authority_ids: Vec::new() }
+			Self { authorities: Vec::new(), authority_ids: Vec::new() }
 		}
 	}
 
@@ -547,7 +546,7 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			let mut signature_threshold = 1u16;
-			let keygen_threshold = u16::try_from(self.authorities.len()).unwrap();
+			let keygen_threshold = 2u16;
 
 			if keygen_threshold <= signature_threshold {
 				signature_threshold = keygen_threshold - 1;
@@ -1348,9 +1347,21 @@ impl<T: Config> Pallet<T> {
 		NextAuthorities::<T>::put(authorities);
 		NextAuthoritySetId::<T>::put(1);
 		NextAuthoritiesAccounts::<T>::put(authority_account_ids);
-		let best_authorities = Self::get_best_authorities(authorities.len(), authorities);
+		let best_authorities = Self::get_best_authorities(
+			Self::keygen_threshold().into(),
+			authorities
+		);
+		#[cfg(feature = "std")] {
+			println!("Best authorities: {:?}", best_authorities);
+			println!("Keygen threshold: {:?}", Self::keygen_threshold() as usize);
+			println!("Keygen threshold: {:?}", Self::next_keygen_threshold() as usize);
+		}
+		
 		BestAuthorities::<T>::put(best_authorities);
-		let next_best_authorities = Self::get_best_authorities(authorities.len(), authorities);
+		let next_best_authorities = Self::get_best_authorities(
+			Self::next_keygen_threshold().into(),
+			authorities
+		);
 		NextBestAuthorities::<T>::put(next_best_authorities);
 
 		<T::OnAuthoritySetChangeHandler as OnAuthoritySetChangeHandler<
