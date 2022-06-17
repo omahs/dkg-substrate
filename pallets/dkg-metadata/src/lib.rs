@@ -1338,6 +1338,15 @@ impl<T: Config> Pallet<T> {
 		if authorities.is_empty() {
 			return
 		}
+		let mut signature_threshold = 1u16;
+		let keygen_threshold = 2u16;
+		SignatureThreshold::<T>::put(signature_threshold);
+		KeygenThreshold::<T>::put(keygen_threshold);
+		NextSignatureThreshold::<T>::put(signature_threshold);
+		NextKeygenThreshold::<T>::put(keygen_threshold);
+		PendingSignatureThreshold::<T>::put(signature_threshold);
+		PendingKeygenThreshold::<T>::put(keygen_threshold);
+
 		assert!(Authorities::<T>::get().is_empty(), "Authorities are already initialized!");
 		// Initialize current authorities
 		Authorities::<T>::put(authorities);
@@ -1347,21 +1356,11 @@ impl<T: Config> Pallet<T> {
 		NextAuthorities::<T>::put(authorities);
 		NextAuthoritySetId::<T>::put(1);
 		NextAuthoritiesAccounts::<T>::put(authority_account_ids);
-		let best_authorities = Self::get_best_authorities(
-			Self::keygen_threshold().into(),
-			authorities
-		);
-		#[cfg(feature = "std")] {
-			println!("Best authorities: {:?}", best_authorities);
-			println!("Keygen threshold: {:?}", Self::keygen_threshold() as usize);
-			println!("Keygen threshold: {:?}", Self::next_keygen_threshold() as usize);
-		}
-		
+		let best_authorities =
+			Self::get_best_authorities(Self::keygen_threshold().into(), authorities);
 		BestAuthorities::<T>::put(best_authorities);
-		let next_best_authorities = Self::get_best_authorities(
-			Self::next_keygen_threshold().into(),
-			authorities
-		);
+		let next_best_authorities =
+			Self::get_best_authorities(Self::next_keygen_threshold().into(), authorities);
 		NextBestAuthorities::<T>::put(next_best_authorities);
 
 		<T::OnAuthoritySetChangeHandler as OnAuthoritySetChangeHandler<

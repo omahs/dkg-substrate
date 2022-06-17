@@ -78,8 +78,7 @@ use dkg_primitives::{
 use dkg_runtime_primitives::{AuthoritySet, DKGApi};
 
 use crate::async_protocols::{
-	remote::AsyncProtocolRemote,
-	AsyncProtocolParameters, GenericAsyncHandler,
+	remote::AsyncProtocolRemote, AsyncProtocolParameters, GenericAsyncHandler,
 };
 
 pub const ENGINE_ID: sp_runtime::ConsensusEngineId = *b"WDKG";
@@ -1121,13 +1120,13 @@ where
 		let threshold = self.get_signature_threshold(header);
 		let authority_public_key = self.get_authority_public_key();
 
-		let mut signing_sets = Vec::new();
 		let (active_local_key, _) = self.fetch_local_keys();
 		let local_key =
 			if active_local_key.is_none() { return } else { active_local_key.unwrap().local_key };
 		let mut count = 0;
 		let mut seed = local_key.public_key().to_bytes(true)[1..].to_vec();
 
+		// TODO: Properly implement the below logic.
 		// Generate multiple signing sets for signing the same unsigned proposals.
 		// The goal is to successfully sign proposals immediately in the event that
 		// some authorities are not present.
@@ -1140,22 +1139,9 @@ where
 		//
 		// Sets with the same values are not unique. We only care about all unique, unordered
 		// permutations of size `t+1`. i.e. (1,2), (2,3), (1,3) === (2,1), (3,2), (3,1)
-		while signing_sets.len() <= best_authorities.len() {
-			if count > 0 {
-				seed = sp_core::keccak_256(&seed).to_vec();
-			}
-			let maybe_set = self.generate_signers(&seed, threshold, best_authorities.clone()).ok();
-			if let Some(set) = maybe_set {
-				if !signing_sets.contains(&set) {
-					signing_sets.push(set);
-				}
-			}
-
-			count += 1;
-		}
-
-		for i in 0..signing_sets.len() {
-			log::info!(target: "dkg", "🕸️  Round Id {:?} | {}-out-of-{} signers: ({:?})", round_id, threshold, best_authorities.len(), signing_sets[i].clone());
+		let maybe_set = self.generate_signers(&seed, threshold, best_authorities.clone()).ok();
+		if let Some(set) = maybe_set {
+			log::info!(target: "dkg", "🕸️  Round Id {:?} | {}-out-of-{} signers: ({:?})", round_id, threshold, best_authorities.len(), set.clone());
 			self.spawn_signing_protocol(
 				best_authorities.clone(),
 				authority_public_key.clone(),
@@ -1164,8 +1150,8 @@ where
 				None,
 				ProtoStageType::Signing,
 				unsigned_proposals.clone(),
-				signing_sets[i].clone(),
-				i as u8,
+				set.clone(),
+				0u8,
 			);
 		}
 	}
