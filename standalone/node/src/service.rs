@@ -24,6 +24,7 @@ use sc_keystore::LocalKeystore;
 use sc_service::{error::Error as ServiceError, BasePath, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
+use sp_core::Pair;
 use std::{sync::Arc, time::Duration};
 
 // Our native executor instance.
@@ -252,7 +253,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			&config,
 			Some(keystore_container.sync_keystore()),
 		);
-
+		let local_keystore = keystore_container.local_keystore();
 		let dkg_params = dkg_gadget::DKGParams {
 			client: client.clone(),
 			backend: backend.clone(),
@@ -260,7 +261,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			network: network.clone(),
 			prometheus_registry: prometheus_registry.clone(),
 			base_path,
-			local_keystore: keystore_container.local_keystore(),
+			local_keystore,
 			_block: std::marker::PhantomData::<Block>,
 		};
 
@@ -270,6 +271,30 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			None,
 			dkg_gadget::start_dkg_gadget::<_, _, _>(dkg_params),
 		);
+
+		let local_keystore =
+			keystore_container.local_keystore().expect("local keystore is initialized");
+		let dkg_keystore = dkg_gadget::DKGKeystore::from(Some(keystore_container.sync_keystore()));
+		let controller_public_key = dkg_keystore.sr25519_public_key(
+			dkg_keystore
+				.sr25519_public_keys()
+				.expect("there is at least one key in the keystore")
+				.as_ref(),
+		);
+		let controller_public_key_raw =
+			&controller_public_key.expect("relayer is the controller key").0[..];
+
+		let controller_key_pair = local_keystore.key_pair::<dkg_runtime_primitives::crypto::Pair>(
+			&dkg_runtime_primitives::crypto::Public::try_from(controller_public_key_raw)
+				.unwrap_or_else(|_| {
+					panic!("Could not find the controller keypair in local key store")
+				}),
+		);
+		let controller_key_private_key = controller_key_pair
+			.expect("dkg keystore is good")
+			.expect("controller key should exist")
+			.to_raw_vec();
+		// now we have access to the raw private key, we can use it in the relayer.
 	}
 
 	let rpc_extensions_builder = {
