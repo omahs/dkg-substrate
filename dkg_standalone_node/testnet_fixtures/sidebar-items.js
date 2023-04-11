@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["get_arana_bootnodes","Arana alpha bootnodes"],["get_arana_initial_authorities","Arana initial authorities"],["get_testnet_root_key","Testnet root key"]]};

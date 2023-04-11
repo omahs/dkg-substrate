@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["IncomingAsyncProtocolWrapper","Used to filter and transform incoming messages from the DKG worker"]],"trait":[["TransformIncoming",""]]};

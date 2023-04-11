@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Keyring","Set of test accounts using [`dkg_primitives::crypto`] types."]],"struct":[["KeyringIter",""]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["new_partial","Starts a `ServiceBuilder` for a full service."],["start_parachain_node","Start a parachain node."]],"struct":[["ParachainNativeExecutor","Native executor type."]]};

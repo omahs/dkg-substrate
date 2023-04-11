@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["BridgeInfo","Information concerning the identity of the controller of an account."],["BridgeMetadata","Information concerning the identity of the controller of an account."],["SerdeData",""]]};

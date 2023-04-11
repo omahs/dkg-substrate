@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["DKGKeySubcommand","Key utilities for the cli."]],"struct":[["InspectKeyCmd","Prints all the information sotred int the DKG LocalKey."]]};

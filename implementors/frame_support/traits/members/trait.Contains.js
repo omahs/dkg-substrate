@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"dkg_rococo_runtime":[["impl Contains&lt;MultiLocation&gt; for <a class=\"struct\" href=\"dkg_rococo_runtime/xcm_config/struct.ParentOrParentsExecutivePlurality.html\" title=\"struct dkg_rococo_runtime::xcm_config::ParentOrParentsExecutivePlurality\">ParentOrParentsExecutivePlurality</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

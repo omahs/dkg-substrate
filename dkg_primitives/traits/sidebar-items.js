@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["GetDKGPublicKey",""],["OnAuthoritySetChangeHandler",""],["OnDKGPublicKeyChangeHandler","A trait for when the DKG Public Key get changed."]]};

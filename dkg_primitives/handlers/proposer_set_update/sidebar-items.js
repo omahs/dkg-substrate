@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["create","Proposal Data: [ merkle_root: 32 bytes average_session_length: 8 bytes num_of_proposers: 4 bytes nonce: 4 bytes ] Total Bytes: 32 + 8 + 4 + 4= 48 bytes"]],"struct":[["ProposerSetUpdateProposal",""]]};

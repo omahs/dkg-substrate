@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"dkg_rococo_runtime":[["impl <a class=\"trait\" href=\"pallet_dkg_proposals/pallet/trait.Config.html\" title=\"trait pallet_dkg_proposals::pallet::Config\">Config</a> for <a class=\"struct\" href=\"dkg_rococo_runtime/struct.Runtime.html\" title=\"struct dkg_rococo_runtime::Runtime\">Runtime</a>"]],
+"dkg_standalone_runtime":[["impl <a class=\"trait\" href=\"pallet_dkg_proposals/pallet/trait.Config.html\" title=\"trait pallet_dkg_proposals::pallet::Config\">Config</a> for <a class=\"struct\" href=\"dkg_standalone_runtime/struct.Runtime.html\" title=\"struct dkg_standalone_runtime::Runtime\">Runtime</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

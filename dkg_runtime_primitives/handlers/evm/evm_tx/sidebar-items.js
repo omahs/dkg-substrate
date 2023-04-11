@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["create","https://github.com/webb-tools/protocol-solidity/issues/83 Proposal Data: [ bytes, variable [0..] ]"]],"struct":[["EvmTxProposal",""]]};

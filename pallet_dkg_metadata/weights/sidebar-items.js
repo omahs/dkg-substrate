@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["WebbWeight","Weights for pallet_dkg_metadata using the Substrate node and recommended hardware."]],"trait":[["WeightInfo","Weight functions needed for pallet_dkg_metadata."]]};

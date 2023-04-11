@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["pallet","The module that hosts all the FRAME types needed to add this pallet to a runtime."],["types",""],["utils",""]],"struct":[["DKGEcdsaToEthereum","Convert DKG secp256k1 public keys into Ethereum addresses"],["WebbWeight","Weights for pallet_dkg_proposals using the Substrate node and recommended hardware."]]};

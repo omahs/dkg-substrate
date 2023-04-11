@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ProtocolPacket","A set of all the packets which will be exchanged between the client/server after wrapping the TCP streams in the appropriate codecs via bind_transport"]],"fn":[["bind_transport",""]],"struct":[["ReadHalf",""],["WriteHalf",""]],"type":[["TransportFramed",""]]};

@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"dkg_rococo_runtime":[["impl CallerTrait&lt;&lt;<a class=\"struct\" href=\"dkg_rococo_runtime/struct.Runtime.html\" title=\"struct dkg_rococo_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"enum\" href=\"dkg_rococo_runtime/enum.OriginCaller.html\" title=\"enum dkg_rococo_runtime::OriginCaller\">OriginCaller</a>"]],
+"dkg_standalone_runtime":[["impl CallerTrait&lt;&lt;<a class=\"struct\" href=\"dkg_standalone_runtime/struct.Runtime.html\" title=\"struct dkg_standalone_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"enum\" href=\"dkg_standalone_runtime/enum.OriginCaller.html\" title=\"enum dkg_standalone_runtime::OriginCaller\">OriginCaller</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

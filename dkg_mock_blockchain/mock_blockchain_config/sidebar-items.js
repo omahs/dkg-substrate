@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ErrorCase","A specific error case that the MockBlockchain will attempt to cause in a subscribing client"],["MockBlockchainConfig",""]]};
